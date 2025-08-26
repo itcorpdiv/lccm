@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>LCCM Timer</title>
+    <style>
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #111F3A;
+            background-image: url("img/background.png");
+            background-size: cover;
+            background-repeat: no-repeat;
+            background-position: center;
+            overflow: hidden;
+        }
+
+        .circle {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            width: 80%;
+            height: 60%;
+            border-radius: 20px;
+            margin-top: 100px;
+            background-color: #365872;
+        }
+
+        h1 {
+            color: white;
+            font-size: 50vh;
+            text-align: center;
+            font-weight: 700;
+            transition: color 0.3s, transform 0.3s; /* Smooth transitions */
+        }
+
+        /* Animation for blinking effect */
+        @keyframes blink-animation {
+            50% {
+                color: red;
+                transform: scale(1.05);
+            }
+        }
+
+        .blinking-effect {
+            animation-name: blink-animation;
+            animation-duration: 0.8s;
+            /* animation-iteration-count is set via JavaScript */
+        }
+    </style>
+</head>
+
+<body>
+    <div class="circle">
+        <h1 id="countdown"></h1>
+    </div>
+
+    <script>
+        // Initialize variables
+        const countdownElement = document.getElementById("countdown");
+        let countdownValue = 0; // in seconds
+        let countdownInterval;
+        let isRunning = false;
+
+        // Preload sounds
+        const tickSound = new Audio('sound/tick.mp3');
+        const timeoutSound = new Audio('sound/timeout.mp3');
+        tickSound.preload = 'auto';
+        timeoutSound.preload = 'auto';
+
+        // Function to format time from seconds to MM:SS
+        function formatTime(seconds) {
+            const minutes = Math.floor(seconds / 60);
+            const remainingSeconds = seconds % 60;
+            const formattedMinutes = String(minutes).padStart(2, '0');
+            const formattedSeconds = String(remainingSeconds).padStart(2, '0');
+            return `${formattedMinutes}:${formattedSeconds}`;
+        }
+
+        // Function to update the countdown display
+        function updateDisplay() {
+            countdownElement.textContent = formatTime(countdownValue);
+        }
+
+        // Function to trigger the blinking animation
+        function triggerBlink(iterationCount) {
+            const animationDuration = 800; // in ms, matches CSS animation-duration
+            
+            // Reset animation by removing and re-adding the class
+            countdownElement.classList.remove('blinking-effect');
+            void countdownElement.offsetWidth; // Trigger a reflow to restart the animation
+            
+            countdownElement.style.animationIterationCount = iterationCount;
+            countdownElement.classList.add('blinking-effect');
+
+            // Set a timeout to remove the class after the animation completes
+            // This prevents the style from sticking
+            setTimeout(() => {
+                countdownElement.classList.remove('blinking-effect');
+                countdownElement.style.animationIterationCount = '';
+            }, animationDuration * iterationCount);
+        }
+
+        // Function to start the countdown
+        function startCountdown() {
+            if (isRunning || countdownValue <= 0) return;
+            isRunning = true;
+            countdownInterval = setInterval(function () {
+                countdownValue--;
+                updateDisplay();
+
+                // Blink 5 times at 1 minute, 30 seconds, and 15 seconds  || countdownValue === 30 || countdownValue === 15
+                if (countdownValue === 60) {
+                    triggerBlink(5);
+                }
+
+                // Blink once and play tick sound for the last 5 seconds
+                if (countdownValue > 0 && countdownValue <= 5) {
+                    triggerBlink(1);
+                    tickSound.play().catch(e => console.error("Error playing tick sound:", e));
+                }
+
+                // When countdown finishes
+                if (countdownValue <= 0) {
+                    clearInterval(countdownInterval);
+                    countdownElement.textContent = "00:00";
+                    timeoutSound.play().catch(e => console.error("Error playing timeout sound:", e));
+                    isRunning = false;
+                }
+            }, 1000);
+        }
+
+        // Function to stop/pause the countdown
+        function stopCountdown() {
+            clearInterval(countdownInterval);
+            isRunning = false;
+        }
+
+        // Event listener for key presses
+        window.addEventListener("keydown", function (event) {
+            // Set countdown to 5 minutes
+            if (event.key === "1") {
+                stopCountdown();
+                countdownValue = 60; // 5 minutes in seconds
+                updateDisplay();
+            } else if (event.key === "2") {
+                stopCountdown();
+                countdownValue = 120;
+                updateDisplay();
+            } else if (event.key === "3") {
+                stopCountdown();
+                countdownValue = 180;
+                updateDisplay();
+            } else if (event.key === "4") {
+                stopCountdown();
+                countdownValue = 240;
+                updateDisplay();
+            } else if (event.key === "5") {
+                 stopCountdown();
+                countdownValue = 300; // 5 minutes in seconds
+                updateDisplay();
+            } else if (event.key === "s" || event.key === "S") {
+                stopCountdown();
+                countdownValue = 30; // 30 seconds 
+                updateDisplay();
+            } else if (event.key === "m" || event.key === "M") {
+                stopCountdown();
+                countdownValue = 5; // 5 seconds 
+                updateDisplay();
+            } else if (event.key === " ") { // Space bar to start/pause
+                if (isRunning) {
+                    stopCountdown();
+                } else {
+                    startCountdown();
+                }
+            } else if (event.key === "F" || event.key === "f") {
+                toggleFullscreen();
+            }
+        });
+
+        window.addEventListener("beforeunload", function (e) {
+            if (isRunning) {
+                e.preventDefault();
+                e.returnValue = '';
+            }
+        });
+
+        function toggleFullscreen() {
+            if (!document.fullscreenElement) {
+                document.documentElement.requestFullscreen().catch(err => {
+                    console.error(`Error attempting to enable full-screen mode: ${err.message} (${err.name})`);
+                });
+            } else {
+                if (document.exitFullscreen) {
+                    document.exitFullscreen();
+                }
+            }
+        }
+        
+        // Initial display on load
+        updateDisplay();
+    </script>
+</body>
+
+</html>
